@@ -461,7 +461,7 @@ function mkIcon(cat){
 
 function initMap(){
   map=L.map('map',{zoomControl:false}).setView([41.695,-87.607],14);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3v85_1_0c86e15b3d682763c8c57364',{
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>',
     subdomains:'abcd',maxZoom:19
   }).addTo(map);

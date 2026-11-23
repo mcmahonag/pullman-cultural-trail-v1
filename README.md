@@ -7,4 +7,4 @@ Archived snapshots of the Pullman Cultural Trail app, preserved to show how it d
 - `2026-06-22/`: last version before thematic routes
 - The current app lives at [mcmahonag/pullman-cultural-trail](https://github.com/mcmahonag/pullman-cultural-trail)
 
-Snapshots are copied unchanged from the main repo's history (commits `438dcc3` and `99e0679`).
+Snapshots are copied from the main repo's history (commits `438dcc3` and `99e0679`). The only change is the CARTO map tile API key from the current app, since CARTO now requires one for the map to load.
