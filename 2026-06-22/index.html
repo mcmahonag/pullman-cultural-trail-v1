@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Pullman Trail"/>
 <meta name="theme-color" content="#1D4E2B"/>
 <title>Pullman Cultural Trail</title>
@@ -30,10 +30,16 @@
   --border:rgba(0,0,0,0.12);
   --nav-h:64px;--header-h:56px;
   --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-top:env(safe-area-inset-top,0px);
+  /* iOS 26 blurs ~20pt below the status bar in home-screen apps; keep header text out of that band */
+  --edge-gap:0px;
 }
 html,body{height:100%;overflow:hidden;background:#1D4E2B;font-family:'DM Sans',sans-serif;color:var(--text)}
 #shell{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;background:var(--bg);position:relative;box-shadow:0 0 40px rgba(0,0,0,0.2)}
-.top-bar{height:var(--header-h);background:var(--brand);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:10}
+.top-bar{height:calc(var(--header-h) + var(--safe-top) + var(--edge-gap));background:var(--brand);display:flex;align-items:center;padding:calc(var(--safe-top) + var(--edge-gap)) 14px 0;gap:10px;flex-shrink:0;z-index:10}
+@media (display-mode: standalone){:root{--edge-gap:20px}}
+/* iOS 26: solid brand strip behind the clock/battery so the system edge blur has a flat color to sample */
+#status-fill{position:fixed;top:0;left:0;right:0;height:var(--safe-top);background:var(--brand);z-index:25000;pointer-events:none}
 .top-logo{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .top-logo svg{width:18px;height:18px;fill:#fff}
 .top-text h1{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#fff;letter-spacing:-0.2px;line-height:1.2}
@@ -205,9 +211,9 @@ body.font-xlarge .stop-card,.font-xlarge .place-card,.font-xlarge .time-card{lin
 </style>
 </head>
 <body>
+<div id="status-fill" aria-hidden="true"></div>
 <div id="shell">
-  <div id="archive-bar" style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;background:#BA7517;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;z-index:11"><a href="../" style="color:#fff;text-decoration:none;white-space:nowrap">← All versions</a><span style="opacity:.9;font-weight:500;white-space:nowrap">Archived version · June 22, 2026</span></div>
-  <div class="top-bar">
+<div class="top-bar">
     <div class="top-logo"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
     <div class="top-text"><h1>Pullman Cultural Trail</h1><p>Historic Pullman · Chicago, IL</p></div>
     <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
@@ -217,6 +223,7 @@ body.font-xlarge .stop-card,.font-xlarge .place-card,.font-xlarge .time-card{lin
       <div id="progress-badge" style="display:none;background:rgba(255,255,255,0.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;color:#fff;white-space:nowrap">0 / 19</div>
     </div>
   </div>
+  <div id="archive-bar" style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;background:#BA7517;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;z-index:11"><a href="../" style="color:#fff;text-decoration:none;white-space:nowrap">← All versions</a><span style="opacity:.9;font-weight:500;white-space:nowrap">Archived version · June 22, 2026</span></div>
   <div class="filter-bar">
     <button class="chip active" data-cat="All" data-i18n="all_stops">All stops</button>
     <button class="chip active" data-cat="Landmark" data-i18n="landmarks">Landmarks</button>
@@ -324,7 +331,7 @@ body.font-xlarge .stop-card,.font-xlarge .place-card,.font-xlarge .time-card{lin
   </div><!-- end .content -->
     <!-- About / Legal modal -->
   <div id="about-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.5)" onclick="closeAbout()">
-    <div id="about-inner" style="position:absolute;bottom:0;left:0;right:0;background:var(--bg);border-radius:18px 18px 0 0;max-height:80vh;overflow-y:auto;padding:20px 18px 40px" onclick="event.stopPropagation()">
+    <div id="about-inner" style="position:absolute;bottom:0;left:0;right:0;background:var(--bg);border-radius:18px 18px 0 0;max-height:80vh;overflow-y:auto;padding:20px 18px calc(40px + env(safe-area-inset-bottom,0px))" onclick="event.stopPropagation()">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text)" id="about-title">ℹ️ About this app</div>
         <button onclick="closeAbout()" style="background:var(--bg2);border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;color:var(--muted)">✕</button>
