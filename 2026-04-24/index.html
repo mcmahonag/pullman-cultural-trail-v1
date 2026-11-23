@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Pullman Trail"/>
+<meta name="theme-color" content="#1D4E2B"/>
+<title>Pullman Cultural Trail</title>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0T6ZG0FELX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-0T6ZG0FELX');
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --brand:#1D4E2B;--brand-light:#EAF3DE;
+  --accent:#BA7517;--accent-light:#FAEEDA;
+  --blue:#185FA5;--blue-light:#E6F1FB;
+  --text:#1a1a1a;--muted:#666;
+  --bg:#fff;--bg2:#f5f5f2;
+  --border:rgba(0,0,0,0.12);
+  --nav-h:64px;--header-h:56px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;background:#1D4E2B;font-family:'DM Sans',sans-serif;color:var(--text)}
+#shell{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;background:var(--bg);position:relative;box-shadow:0 0 40px rgba(0,0,0,0.2)}
+.top-bar{height:var(--header-h);background:var(--brand);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:10}
+.top-logo{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.top-logo svg{width:18px;height:18px;fill:#fff}
+.top-text h1{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#fff;letter-spacing:-0.2px;line-height:1.2}
+.top-text p{font-size:11px;color:rgba(255,255,255,0.65)}
+.filter-bar{display:flex;gap:8px;padding:9px 14px;background:var(--bg);border-bottom:0.5px solid var(--border);overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.chip{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;border:0.5px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;white-space:nowrap;-webkit-appearance:none}
+.chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.content{flex:1;overflow:hidden;position:relative}
+.view{position:absolute;inset:0;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.view.active{display:block}
+#map-view{overflow:hidden;display:none;flex-direction:column}
+#map-view.active{display:flex}
+#map{flex:1;min-height:0}
+.legend-row{display:flex;gap:14px;flex-wrap:wrap;padding:9px 14px;background:var(--bg);border-top:0.5px solid var(--border);flex-shrink:0;align-items:center}
+.locate-btn{margin-left:auto;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 12px;border-radius:20px;border:0.5px solid var(--brand);background:var(--brand-light);color:var(--brand);cursor:pointer;white-space:nowrap}
+.locate-btn.locating{opacity:.6;pointer-events:none}
+.walk-time{font-size:11px;color:var(--blue);font-weight:500;white-space:nowrap}
+.stop-card.visited{background:var(--brand-light)}
+.stop-card.visited .stop-name::after{content:' ✓';color:var(--brand);font-size:11px}
+.visited-badge{background:var(--brand);color:#fff !important;border-color:var(--brand) !important}
+body.font-large{font-size:17px}
+body.font-large .stop-name,.font-large .stop-preview,.font-large .desc,.font-large .time-tip,.font-large .place-desc,.font-large .tip-item{font-size:15px !important}
+body.font-large .stop-card,.font-large .place-card,.font-large .time-card{line-height:1.6}
+body.font-xlarge{font-size:20px}
+body.font-xlarge .stop-name,.font-xlarge .stop-preview,.font-xlarge .desc,.font-xlarge .time-tip,.font-xlarge .place-desc,.font-xlarge .tip-item{font-size:17px !important}
+body.font-xlarge .sh-name{font-size:22px !important}
+body.font-xlarge .stop-card,.font-xlarge .place-card,.font-xlarge .time-card{line-height:1.7}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:480px;background:var(--bg);border-radius:16px 16px 0 0;box-shadow:0 -4px 32px rgba(0,0,0,0.25);transition:transform .3s cubic-bezier(.32,.72,0,1);z-index:9999;max-height:70%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--safe-bottom));}
+.sheet.open{transform:translateX(-50%) translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0}
+.sheet-close{position:absolute;top:12px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--bg2);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.sheet-body{padding:12px 16px 32px}
+.sheet-body h3{font-family:'Playfair Display',serif;font-size:18px;color:var(--brand);margin:6px 0 6px}
+.sheet-body .desc{font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:10px}
+.stop-cat{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;display:inline-block}
+.cat-Landmark{background:var(--brand-light);color:var(--brand)}
+.cat-Museum{background:var(--accent-light);color:var(--accent)}
+.cat-Transit{background:var(--blue-light);color:var(--blue)}
+.stop-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.stop-link{font-size:13px;color:var(--brand);text-decoration:none;border:0.5px solid var(--brand);padding:6px 14px;border-radius:20px}
+.stop-link:active{background:var(--brand-light)}
+.transit-dir{background:var(--blue);color:#fff;border-color:var(--blue)}
+.transit-dir:active{background:#0f4a8a}
+#list-view{padding-bottom:calc(var(--nav-h) + var(--safe-bottom))}
+.list-header{padding:11px 14px;background:var(--bg);border-bottom:0.5px solid var(--border);font-size:13px;color:var(--muted);position:sticky;top:0;z-index:5}
+.stop-card{display:flex;gap:12px;align-items:flex-start;padding:14px;border-bottom:0.5px solid var(--border);cursor:pointer;background:var(--bg)}
+.stop-card:active{background:var(--bg2)}
+.stop-dot{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.dot-Landmark{background:var(--brand-light);color:var(--brand)}
+.dot-Museum{background:var(--accent-light);color:var(--accent)}
+.dot-Transit{background:var(--blue-light);color:var(--blue)}
+.stop-info{flex:1;min-width:0}
+.stop-name{font-size:15px;font-weight:500;margin-bottom:3px}
+.stop-addr{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.stop-preview{font-size:12px;color:var(--muted);line-height:1.5;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:all .2s}
+.stop-preview.expanded{display:block;-webkit-line-clamp:unset;overflow:visible}
+.card-expand{font-size:11px;color:var(--brand);font-weight:500;margin-top:4px;cursor:pointer;display:inline-block}
+.card-links{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.card-link{font-size:12px;color:var(--brand);text-decoration:none;border:0.5px solid var(--brand);padding:4px 12px;border-radius:20px}
+.chevron{color:#ccc;font-size:20px;align-self:center;flex-shrink:0;margin-left:4px;transition:transform .2s}
+#dir-view{padding-bottom:calc(var(--nav-h) + var(--safe-bottom))}
+.dir-inner{padding:16px}
+.dir-inner h3{font-size:16px;font-weight:500;margin-bottom:14px;color:var(--text)}
+.field-group{margin-bottom:12px}
+.field-group label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;font-weight:500}
+.field-group select{font-family:'DM Sans',sans-serif;font-size:15px;padding:12px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);width:100%;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.go-btn{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;padding:14px;background:var(--brand);color:#fff;border:none;border-radius:10px;cursor:pointer;width:100%;margin-top:4px}
+.go-btn:active{background:#27500A}
+.dir-result{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.stat-row{display:flex;gap:10px}
+.stat-card{flex:1;background:var(--bg2);border-radius:10px;padding:10px 8px;text-align:center}
+.stat-card strong{display:block;font-size:16px;font-weight:500;color:var(--text)}
+.stat-card span{font-size:11px;color:var(--muted)}
+.route-section h4{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px}
+.route-stop{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:10px;font-size:14px;position:relative}
+.route-stop+.route-stop{margin-top:4px}
+.route-stop+.route-stop::before{content:'';position:absolute;left:21px;top:-4px;width:1px;height:4px;background:var(--border)}
+.route-num{width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.route-name{font-weight:500;margin-bottom:2px}
+.route-meta{font-size:11px;color:var(--muted)}
+.maps-btn{display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:500;color:#fff;text-decoration:none;background:var(--brand);padding:14px;border-radius:10px;width:100%;margin-top:4px}
+.maps-btn:active{background:#27500A}
+.clear-btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px;background:transparent;color:var(--muted);border:0.5px solid var(--border);border-radius:10px;cursor:pointer;width:100%;margin-top:4px}
+.clear-btn:active{background:var(--bg2)}
+.dir-hint{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.route-summary{display:flex;gap:10px;margin-bottom:12px}
+.route-summary .stat-card{flex:1;background:var(--bg2);border-radius:10px;padding:10px 8px;text-align:center}
+.route-summary .stat-card strong{display:block;font-size:16px;font-weight:500;color:var(--text)}
+.route-summary .stat-card span{font-size:11px;color:var(--muted)}
+.built-stop{display:flex;gap:8px;align-items:center;padding:9px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:10px;margin-bottom:6px;position:relative}
+.built-stop+.built-stop::before{display:none}
+.built-num{width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:10px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.built-info{flex:1;min-width:0}
+.built-name{font-size:13px;font-weight:500}
+.built-meta{font-size:11px;color:var(--muted);margin-top:1px}
+.built-actions{display:flex;gap:4px;flex-shrink:0}
+.built-btn{width:26px;height:26px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.built-btn:active{background:var(--border)}
+.built-btn.remove{color:#E24B4A;border-color:#E24B4A}
+.picker-header{display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px}
+.picker-header span{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+#stop-search{font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;border:0.5px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text);width:55%}
+.picker-stop{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
+.picker-stop:active{background:var(--bg2)}
+.picker-stop.in-route{opacity:0.4;pointer-events:none}
+.picker-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
+.picker-info{flex:1;min-width:0}
+.picker-name{font-size:13px;font-weight:500}
+.picker-cat{font-size:11px;color:var(--muted)}
+.add-icon{font-size:18px;color:var(--brand);flex-shrink:0;font-weight:500}
+#route-actions{margin-bottom:12px}
+.plan-inner{padding:16px;overflow-y:auto;height:100%}
+.plan-section{margin-bottom:24px}
+.plan-section-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.plan-intro{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.time-card{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:10px;margin-bottom:6px}
+.time-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;margin-top:1px}
+.time-info{flex:1;min-width:0}
+.time-name{font-size:13px;font-weight:500;color:var(--text)}
+.time-dur{font-size:12px;color:var(--brand);font-weight:500;margin:1px 0}
+.time-tip{font-size:11px;color:var(--muted);line-height:1.4}
+.place-card{background:var(--bg);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px}
+.place-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px}
+.place-name{font-size:14px;font-weight:500;color:var(--text)}
+.place-rating{font-size:12px;color:var(--muted)}
+.place-meta{font-size:11px;color:var(--muted);margin-bottom:6px}
+.place-desc{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:8px}
+.place-link{font-size:12px;font-weight:500;color:var(--brand);text-decoration:none}
+.tip-list{display:flex;flex-direction:column;gap:8px}
+.tip-item{font-size:12px;color:var(--text);line-height:1.5;padding:10px 12px;background:var(--bg2);border-radius:10px}
+.partner-bar{background:var(--brand);display:flex;align-items:center;justify-content:center;gap:10px;padding:7px 16px;flex-shrink:0;border-top:1px solid rgba(255,255,255,0.15)}
+.partner-label{font-size:10px;color:rgba(255,255,255,0.7);white-space:nowrap;font-weight:500;letter-spacing:.3px}
+.partner-link{display:flex;align-items:center;text-decoration:none}
+.npca-logo{height:22px;width:auto;object-fit:contain;filter:brightness(0) invert(1)}
+.npca-text-fallback{align-items:center;gap:6px}
+.npca-abbr{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#fff;letter-spacing:.5px}
+.npca-full{font-size:10px;color:rgba(255,255,255,0.85);font-weight:500}
+.bottom-nav{height:calc(var(--nav-h) + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:var(--bg);border-top:0.5px solid var(--border);display:flex;flex-shrink:0;z-index:30}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;padding:0}
+.nav-btn.active{color:var(--brand)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+<div id="shell">
+  <div class="top-bar">
+    <div class="top-logo"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+    <div class="top-text"><h1>Pullman Cultural Trail</h1><p>Historic Pullman · Chicago, IL</p></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+      <button id="lang-toggle" onclick="toggleLang()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;letter-spacing:.3px">ES</button>
+      <button id="font-toggle" onclick="cycleFont()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;letter-spacing:.3px">A+</button>
+      <div id="progress-badge" style="display:none;background:rgba(255,255,255,0.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;color:#fff;white-space:nowrap">0 / 19</div>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <button class="chip active" data-cat="All" data-i18n="all_stops">All stops</button>
+    <button class="chip active" data-cat="Landmark" data-i18n="landmarks">Landmarks</button>
+    <button class="chip active" data-cat="Museum" data-i18n="museums">Museums</button>
+    <button class="chip active" data-cat="Transit" data-i18n="transit">Transit</button>
+  </div>
+  <div class="content">
+    <div class="view active" id="map-view">
+      <div id="map"></div>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:#1D4E2B"></div>Landmark</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#BA7517"></div>Museum</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#185FA5"></div>Transit</div>
+        <button id="locate-btn" class="locate-btn" onclick="locateMe()">📍 I'm here</button>
+      </div>
+    </div>
+    <div class="view" id="list-view">
+      <div class="list-header">Showing <strong id="count-shown">19</strong> of <strong id="count-all">19</strong> stops</div>
+      <div id="stop-cards"></div>
+    </div>
+    <div class="view" id="dir-view">
+      <div class="dir-inner">
+        <h3 data-i18n="build_route">Build your route</h3>
+        <p class="dir-hint" data-i18n="route_hint">Tap stops below to add them to your route. Tap ✕ to remove. Use ↑↓ to reorder.</p>
+
+        <!-- Route summary bar -->
+        <div class="route-summary" id="route-summary" style="display:none">
+          <div class="stat-card"><strong id="rs-dist">0 mi</strong><span>Distance</span></div>
+          <div class="stat-card"><strong id="rs-time">0 min</strong><span>Walking</span></div>
+          <div class="stat-card"><strong id="rs-stops">0</strong><span>Stops</span></div>
+        </div>
+
+        <!-- Built route -->
+        <div id="built-route"></div>
+
+        <!-- Action buttons -->
+        <div id="route-actions" style="display:none">
+          <a id="maps-link" href="#" target="_blank" class="maps-btn" style="margin-bottom:8px">Open in Google Maps ↗</a>
+          <button class="clear-btn" id="clear-route">Clear route</button>
+        </div>
+
+        <!-- Stop picker -->
+        <div class="picker-header">
+          <span>Add stops</span>
+          <input type="text" id="stop-search" placeholder="Search stops…" />
+        </div>
+        <div id="stop-picker"></div>
+      </div>
+    </div>
+  </div>
+    <div class="view" id="plan-view">
+      <div class="plan-inner">
+
+        <!-- Time at each stop -->
+        <div class="plan-section">
+          <div class="plan-section-title" data-i18n="plan_time_title">⏱ Time at each stop</div>
+          <p class="plan-intro" data-i18n="plan_time_intro">A full visit to all highlights takes about 4–5 hours. Here's how long to budget per stop.</p>
+          <div id="time-cards"></div>
+        </div>
+
+        <!-- Lunch spots -->
+        <div class="plan-section">
+          <div class="plan-section-title" data-i18n="plan_lunch_title">🍽 Lunch spots nearby</div>
+          <p class="plan-intro" data-i18n="plan_lunch_intro">All within a short drive of the trail core.</p>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">Pullman Club Coffee</div>
+              <div class="place-rating">⭐ 4.8</div>
+            </div>
+            <div class="place-meta">☕ Coffee & pastries · 605 E 111th St · Tue–Sun 8am–3pm</div>
+            <div class="place-desc">Right on the trail inside the Pullman House Project. Perfect for a morning start or mid-tour break. Locally sourced pastries, great espresso, and historic ambiance.</div>
+            <a class="place-link" href="https://maps.google.com/?q=605+E+111th+St+Chicago+IL" target="_blank">Get directions ↗</a>
+          </div>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">Lexington Betty Smokehouse</div>
+              <div class="place-rating">⭐ 4.2</div>
+            </div>
+            <div class="place-meta">🍖 BBQ · 756 E 111th St · Tue–Sat 11am–7pm</div>
+            <div class="place-desc">The closest sit-down lunch to the trail core. Known for brisket, pulled pork, and sides. Operated by Chef Dominique — a neighborhood institution.</div>
+            <a class="place-link" href="https://maps.google.com/?q=756+E+111th+St+Chicago+IL" target="_blank">Get directions ↗</a>
+          </div>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">S2 Grills</div>
+              <div class="place-rating">⭐ 4.5</div>
+            </div>
+            <div class="place-meta">🔥 Grilled food · 129 E 103rd St · Daily 12–10pm</div>
+            <div class="place-desc">Highly rated grilled salmon, burgers, and veggie plates near the north end of the trail. Fresh, well-seasoned, and great value. Good stop if you're starting from the 103rd St Metra.</div>
+            <a class="place-link" href="https://maps.google.com/?q=129+E+103rd+St+Chicago+IL" target="_blank">Get directions ↗</a>
+          </div>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">Ware Ranch Steak House</div>
+              <div class="place-rating">⭐ 4.2</div>
+            </div>
+            <div class="place-meta">🥩 Steaks & breakfast · 11147 S Michigan Ave · Wed–Thu 8am–2pm · Fri–Sun 8am–5pm</div>
+            <div class="place-desc">A South Side institution since 1965, known for steaks, fried chicken, and soul food breakfasts. Black-owned and beloved by the neighborhood. Note: hours subject to change — call ahead at (773) 264-0320.</div>
+            <a class="place-link" href="https://maps.google.com/?q=11147+S+Michigan+Ave+Chicago+IL" target="_blank">Get directions ↗</a>
+          </div>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">Old Fashioned Donuts</div>
+              <div class="place-rating">⭐ 4.7</div>
+            </div>
+            <div class="place-meta">🍩 Donut shop · 11248 S Michigan Ave · Mon–Sat 6am–6pm · Closed Sunday</div>
+            <div class="place-desc">A legendary Chicago institution with over 2,300 five-star reviews. Hand-crafted donuts made fresh daily — the apple fritter and chocolate glazed are local favorites. People travel from across the city (and country) for these. A must-visit.</div>
+            <a class="place-link" href="https://maps.google.com/?q=11248+S+Michigan+Ave+Chicago+IL" target="_blank">Get directions ↗</a>
+          </div>
+        </div>
+
+        <!-- Other businesses -->
+        <div class="plan-section">
+          <div class="plan-section-title" data-i18n="plan_visit_title">🏪 Also worth a visit</div>
+          <p class="plan-intro" data-i18n="plan_visit_intro">Other businesses and spots near the trail worth checking out.</p>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">Pullman Artspace Lofts</div>
+              <div class="place-rating">🎨 Art</div>
+            </div>
+            <div class="place-meta">11137 S Langley Ave</div>
+            <div class="place-desc">Live-work studios for artists in a restored Pullman building. Check their website for open studio events and exhibitions — a great way to meet the creative community keeping Pullman vibrant.</div>
+            <a class="place-link" href="https://pullmanarts.org" target="_blank">pullmanarts.org ↗</a>
+          </div>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">Share Your Soles</div>
+              <div class="place-rating">❤️ Nonprofit</div>
+            </div>
+            <div class="place-meta">11201 S Cottage Grove Ave · Historic Horse Stables</div>
+            <div class="place-desc">A nonprofit operating out of Pullman's original horse stables, collecting and distributing shoes to those in need. Their presence in the stables is a living example of adaptive reuse in the neighborhood.</div>
+            <a class="place-link" href="http://www.shareyoursoles.org" target="_blank">shareyoursoles.org ↗</a>
+          </div>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">NPS Gift Shop</div>
+              <div class="place-rating">🎁 Shopping</div>
+            </div>
+            <div class="place-meta">610 E 111th St · Inside Visitor Center · Wed–Sun 10am–4pm</div>
+            <div class="place-desc">Pullman-themed books, apparel, postcards, and the National Parks Passport stamp. A great place to pick up a memento or learn more about the park's history through their curated selection.</div>
+            <a class="place-link" href="https://www.nps.gov/pull/index.htm" target="_blank">nps.gov/pull ↗</a>
+          </div>
+          <div class="place-card">
+            <div class="place-header">
+              <div class="place-name">Arcade Park</div>
+              <div class="place-rating">🌳 Green space</div>
+            </div>
+            <div class="place-meta">111th & Forrestville Ave</div>
+            <div class="place-desc">The original greenspace at the heart of Pullman's planned community. A perfect spot to sit, reflect, and take in the surrounding historic architecture. Often the backdrop for neighborhood events.</div>
+            <a class="place-link" href="https://www.google.com/maps/search/?api=1&query=Arcade+Park+Pullman+Chicago" target="_blank">View on map ↗</a>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="plan-section">
+          <div class="plan-section-title" data-i18n="plan_tips_title">💡 Visitor tips</div>
+          <div class="tip-list">
+            <div class="tip-item">🚆 <strong>Metra Electric:</strong> Take the Metra Electric to 111th St/Pullman — steps from the Visitor Center and Pullman Club Coffee. Trains run every 30–40 min from Millennium Park (~20 min express).</div>
+            <div class="tip-item">🚌 <strong>Getting here by CTA bus:</strong> Route <strong>#4 (Cottage Grove)</strong> runs the full length of the trail with stops at every block from 103rd to 115th St, connecting to the Red Line at 95th St. Routes <strong>#115</strong> and <strong>#111A (Pullman Shuttle)</strong> also serve 111th–115th & Cottage Grove. Use the <a href="https://www.ctabustracker.com" target="_blank" style="color:var(--brand)">CTA Bus Tracker ↗</a> for real-time arrivals, and the <a href="https://www.ventrachicago.com" target="_blank" style="color:var(--brand)">Ventra app ↗</a> to pay for CTA and Metra rides in one place.</div>
+            <div class="tip-item">🚲 <strong>Divvy Bikes:</strong> Two docking stations near the trail — at <strong>Cottage Grove & 111th Pl</strong> and <strong>MLK Dr & 111th St</strong>. Use the Divvy or Lyft app to unlock bikes. <a href="https://divvybikes.com" target="_blank" style="color:var(--brand)">divvybikes.com ↗</a></div>
+            <div class="tip-item">🅿️ <strong>Parking:</strong> Free parking available at the Exhibit Hall lot at 112th & Cottage Grove.</div>
+            <div class="tip-item">👟 <strong>Wear comfortable shoes</strong> — the full trail involves several blocks of walking on uneven historic brick sidewalks.</div>
+            <div class="tip-item">📅 <strong>Best days to visit:</strong> Thursday–Sunday when all four museums are open simultaneously.</div>
+            <div class="tip-item">🎟 <strong>Book Pullman House Project tours in advance</strong> — daily tours at 10am fill up, especially on weekends. Tickets at pullmanathome.org/tours.</div>
+            <div class="tip-item">☀️ <strong>Summer & fall</strong> are the best seasons — Arcade Park is lush, and the Annual House Tour happens each October.</div>
+            <div class="tip-item">📱 <strong>Save this app to your home screen</strong> for easy access during your visit — no download required! On <strong>iPhone</strong>: tap the Share button (□↑) in Safari, then "Add to Home Screen." On <strong>Android</strong>: tap the three-dot menu in Chrome, then "Add to Home Screen."</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span class="stop-cat" id="sh-cat"></span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button id="sh-visited-btn" onclick="toggleVisited()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;color:var(--muted)">Mark visited</button>
+          <button id="sh-share-btn" onclick="shareStop()" style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;color:var(--muted)">Share ↗</button>
+          <button id="sheet-close" style="width:28px;height:28px;border-radius:50%;background:var(--bg2);border:none;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0">✕</button>
+        </div>
+      </div>
+      <h3 id="sh-name"></h3>
+      <p class="desc" id="sh-desc"></p>
+      <div id="sh-hours" style="display:none;margin-bottom:8px"></div>
+      <div class="stop-links" id="sh-links"></div>
+    </div>
+  </div>
+  <!-- NPCA Partnership bar -->
+  <div class="partner-bar">
+    <span class="partner-label" data-i18n="partnership">A partnership with</span>
+    <a href="https://www.npca.org" target="_blank" class="partner-link">
+      <img src="https://www.npca.org/assets/images/npca-logo-white.png"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+           alt="National Parks Conservation Association" class="npca-logo"/>
+      <span class="npca-text-fallback" style="display:none">
+        <span class="npca-abbr">NPCA</span>
+        <span class="npca-full">National Parks Conservation Association</span>
+      </span>
+    </a>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-view="map">
+      <svg viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      <span data-i18n="nav_map">Map</span>
+    </button>
+    <button class="nav-btn" data-view="list">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+      <span data-i18n="nav_stops">Stops</span>
+    </button>
+    <button class="nav-btn" data-view="directions">
+      <svg viewBox="0 0 24 24"><path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h11l4 4-4 4H9v6z"/><path d="M9 17v2a2 2 0 002 2h6a2 2 0 002-2v-5"/></svg>
+      <span data-i18n="nav_directions">Directions</span>
+    </button>
+    <button class="nav-btn" data-view="plan">
+      <svg viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <span data-i18n="nav_plan">Plan Trip</span>
+    </button>
+  </nav>
+</div>
+<script>
+const stops=[
+  {id:"103rd-metra",name:"103rd St / Rosemoor Metra",cat:"Transit",addr:"103rd St, Chicago, IL 60628",lat:41.70742904,lng:-87.60721489,link:"https://www.metra.com/schedules",metraUrl:"https://www.metra.com/schedules",desc:"Metra Electric Line station serving the northern edge of the Pullman district. A convenient gateway to the trail from downtown Chicago."},
+  {id:"107th-metra",name:"107th St Metra",cat:"Transit",addr:"107th St, Chicago, IL 60628",lat:41.70009113,lng:-87.60881261,link:"https://www.metra.com/schedules",metraUrl:"https://www.metra.com/schedules",desc:"Mid-corridor Metra Electric stop providing easy access to the A. Philip Randolph Museum and Pullman Wheel Works."},
+  {id:"111th-metra",name:"111th St / Pullman Metra",cat:"Transit",addr:"111th St, Chicago, IL 60628",lat:41.69282699,lng:-87.61049765,link:"https://www.metra.com/schedules",metraUrl:"https://www.metra.com/schedules",desc:"The primary transit hub for visitors to Historic Pullman, steps from the Visitor Center, Hotel Florence, and the Pullman National Historical Park core."},
+  {id:"115th-metra",name:"115th St / Kensington Metra",cat:"Transit",addr:"115th St, Chicago, IL 60628",lat:41.68573427,lng:-87.61231565,link:"https://www.metra.com/schedules",metraUrl:"https://www.metra.com/schedules",desc:"Southern terminus station for the trail, serving the Kensington neighborhood at the edge of the Pullman district."},
+  {id:"greenstone-church",name:"Greenstone Church",cat:"Landmark",addr:"11211 S St Lawrence Ave, Chicago, IL 60628",lat:41.69061887,lng:-87.60822459,link:"http://friendsofpullman.com/",desc:"Built in 1882, this English Gothic-style church was constructed by George Pullman as part of his model company town. Its distinctive green serpentine stone exterior is one of Pullman's most recognizable structures."},
+  {id:"firehouse",name:"Firehouse",cat:"Landmark",addr:"623 E 108th St, Chicago, IL 60628",lat:41.69812269,lng:-87.60773207,link:"",desc:"The historic Pullman firehouse served the planned community's public safety needs in the late 19th century. Its Romanesque Revival design reflects the architectural cohesion Pullman demanded across his town."},
+  {id:"hotel-florence",name:"Hotel Florence",cat:"Landmark",addr:"11111 S Forrestville Ave, Chicago, IL 60628",lat:41.69235239,lng:-87.60907802,link:"https://dnrhistoric.illinois.gov/experience/sites/site.pullman-factory.html",desc:"Named for George Pullman's favorite daughter, this Queen Anne-style hotel (1881) was the social centerpiece of the model town. Now a State of Illinois historic site, it hosted dignitaries and served as a symbol of Pullman's ambitions."},
+  {id:"market-square",name:"Market Square",cat:"Landmark",addr:"626 E 112th St, Chicago, IL 60628",lat:41.69132767,lng:-87.60720345,link:"http://friendsofpullman.com/",directions:true,desc:"One of the earliest planned commercial squares in the United States, designed to serve Pullman workers' daily needs. The arcade-style block remains a striking example of 19th-century urban planning."},
+  {id:"pullman-car-works",name:"Pullman Car Works",cat:"Landmark",addr:"610 E 111th St, Chicago, IL 60628",lat:41.69289337,lng:-87.60869334,link:"https://www.nps.gov/pull/index.htm",desc:"The industrial heart of the Pullman company, where thousands of workers once built and maintained the iconic sleeping cars that defined American rail travel. Now part of Pullman National Historical Park."},
+  {id:"visitor-center",name:"Visitor Center",cat:"Museum",hours:"Wed–Sun 10am–4pm · Closed Mon, Tue & federal holidays",addr:"11000 S Cottage Grove Ave, Chicago, IL 60628",lat:41.694361788691246,lng:-87.60875639931434,link:"https://www.nps.gov/pull/index.htm",desc:"The official National Park Service visitor center for Pullman National Historical Park. Start your journey here for exhibits, ranger programs, and orientation to the park's history of labor, industry, and community."},
+  {id:"randolph-museum",name:"A. Philip Randolph Museum",cat:"Museum",hours:"Currently closed for expansion · Reopening Spring 2026 · Check thepullmanportersmuseum.org for updates",addr:"10406 S Maryland Ave, Chicago, IL 60628",lat:41.70538906,lng:-87.60289581,link:"http://thepullmanportersmuseum.org/",desc:"Dedicated to the life and legacy of A. Philip Randolph, founder of the Brotherhood of Sleeping Car Porters — the first predominantly Black labor union. The museum honors the porters' pivotal role in the civil rights movement."},
+  {id:"wheel-works",name:"Pullman Wheel Works",cat:"Landmark",addr:"901 E 104th St, Chicago, IL 60628",lat:41.70556659,lng:-87.60107403,link:"https://www.mercyhousing.org/lakefront/pullman-wheelworks-apartments/",desc:"A former industrial complex where train wheels were manufactured. Adaptively reused as affordable housing by Mercy Housing Lakefront, preserving the building's historic character."},
+  {id:"exhibit-hall",name:"Pullman Exhibit Hall",cat:"Museum",hours:"Thu–Sun 11am–3pm · Free admission · Donations welcome",addr:"11141 S Cottage Grove Ave, Chicago, IL 60628",lat:41.6913275618584,lng:-87.60968525320824,link:"http://friendsofpullman.com/",desc:"A museum and community gathering space operated by the Historic Pullman Foundation, hosting exhibits, events, and educational programs about the neighborhood's rich history of labor, industry, and planned community design."},
+  {id:"artspace",name:"Pullman Artspace",cat:"Landmark",addr:"11137 S Langley Ave, Chicago, IL 60628",lat:41.69167943,lng:-87.60582837,link:"https://pullmanarts.org/",desc:"A vibrant live-work space for artists, housed in a historic Pullman building. Pullman Artspace supports the creative community while preserving the neighborhood's architectural heritage."},
+  {id:"honeymoon-row",name:"Honeymoon Row",cat:"Landmark",addr:"",lat:41.687381,lng:-87.607103,link:"",directions:true,desc:"A charming block of row houses reportedly nicknamed for the young couples who first settled there. The streetscape offers a glimpse into everyday life in Pullman's planned residential community."},
+  {id:"horse-stables",name:"Horse Stables",cat:"Landmark",addr:"11201 S Cottage Grove Ave, Chicago, IL 60628",lat:41.69085028,lng:-87.61013935,link:"http://www.shareyoursoles.org/",desc:"Originally built to house the horses used in Pullman's operations, this structure is now home to Share Your Soles, a nonprofit collecting and distributing shoes to those in need."},
+  {id:"miller-center",name:"Florence Lowden Miller Center",cat:"Landmark",addr:"614 E 113th St, Chicago, IL 60628",lat:41.68928636,lng:-87.60764729,link:"http://friendsofpullman.com/",desc:"A community center named in honor of Florence Lowden Miller, operated by the Historic Pullman Foundation as a hub for neighborhood programming and preservation efforts."},
+  {id:"schlitz-row",name:"Schlitz Row",cat:"Landmark",addr:"11400 S Front Ave, Chicago, IL 60628",lat:41.68913413,lng:-87.61165258,link:"http://pullmantechworkshop.org/",desc:"Located at 11400 S. Front Ave. and the adjacent stable at 11314 S. Front Ave. (both 1906), these Queen Anne-style buildings combine projecting arches, recessed wall planes, and stucco accents for a sculptural effect. Their sturdy brick masonry and minimal ornament reflect the utilitarian character of the stable and deference to the grander tied house nearby."},
+  {id:"house-project",name:"Pullman House Project",cat:"Museum",hours:"Daily tours at 10am · Advance tickets required · pullmanathome.org/tours",addr:"605 E 111th St, Chicago, IL 60628",lat:41.69267887,lng:-87.60819321,link:"https://www.pullmanathome.org/menu",desc:"An immersive house museum preserving an authentically restored Pullman worker's home. Visitors experience domestic life as it was lived in the 1890s model town. Also home to Pullman Club Coffee, serving coffee and pastries — a perfect stop before or after your tour."},
+  {id:"divvy-cottage-111th-pl",name:"Divvy Station — Cottage Grove & 111th Pl",cat:"Transit",addr:"Cottage Grove Ave & 111th Pl, Chicago, IL 60628",lat:41.6917099,lng:-87.61000,link:"https://divvybikes.com",desc:"Confirmed Divvy docking station at Cottage Grove & 111th Place. Unlock classic bikes and e-bikes using the Divvy or Lyft app. Check availability at divvybikes.com or download the Divvy app (iOS & Android).",link2:"https://account.divvybikes.com/map"},
+  {id:"divvy-mlk-111th",name:"Divvy Station — MLK Dr & 111th St",cat:"Transit",addr:"Martin Luther King Dr & 111th St, Chicago, IL 60628",lat:41.6926391,lng:-87.6136739,link:"https://divvybikes.com",desc:"Divvy docking station at Martin Luther King Dr and 111th St. Unlock classic bikes and e-bikes using the Divvy or Lyft app. Check availability at divvybikes.com or download the Divvy app (iOS & Android).",link2:"https://account.divvybikes.com/map"}
+];
+
+const catColors={Landmark:{fill:"#1D4E2B"},Museum:{fill:"#BA7517"},Transit:{fill:"#185FA5"}};
+let activeFilters=new Set(["Landmark","Museum","Transit"]),map,markers=[];
+
+function getVisible(){return stops.filter(s=>activeFilters.has(s.cat));}
+
+function haversine(a,b){
+  const R=3959,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lng-a.lng)*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function bearing(a,b){
+  const dLon=(b.lng-a.lng)*Math.PI/180;
+  const y=Math.sin(dLon)*Math.cos(b.lat*Math.PI/180);
+  const x=Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180)-Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos(dLon);
+  const deg=(Math.atan2(y,x)*180/Math.PI+360)%360;
+  return ["north","northeast","east","southeast","south","southwest","west","northwest"][Math.round(deg/45)%8];
+}
+function mkIcon(cat){
+  const c=catColors[cat]||{fill:"#444"};
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="22" height="29" viewBox="0 0 26 34"><path d="M13 0C5.82 0 0 5.82 0 13c0 9.75 13 21 13 21s13-11.25 13-21C26 5.82 20.18 0 13 0z" fill="${c.fill}"/><circle cx="13" cy="13" r="5.5" fill="white" opacity="0.9"/></svg>`;
+  return L.divIcon({html:svg,className:'',iconSize:[22,29],iconAnchor:[11,29],popupAnchor:[0,-29]});
+}
+
+function initMap(){
+  map=L.map('map',{zoomControl:false}).setView([41.695,-87.607],14);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>',
+    subdomains:'abcd',maxZoom:19
+  }).addTo(map);
+  L.control.zoom({position:'topright'}).addTo(map);
+  map.on('click',()=>closeSheet());
+  renderMarkers();
+}
+
+function renderMarkers(){
+  markers.forEach(m=>m.remove());markers=[];
+  const visible=getVisible();
+  visible.forEach(s=>{
+    if(!s.lat||!s.lng)return;
+    const m=L.marker([s.lat,s.lng],{icon:mkIcon(s.cat)}).addTo(map).on('click',(e)=>{
+      L.DomEvent.stopPropagation(e);
+      L.DomEvent.preventDefault(e);
+      showSheet(s);
+    });
+    markers.push(m);
+  });
+  const ll=visible.filter(s=>s.lat).map(s=>[s.lat,s.lng]);
+  if(ll.length)map.fitBounds(ll,{padding:[44,44]});
+}
+
+function closeSheet(){
+  const s=document.getElementById('sheet');
+  if(s) s.classList.remove('open');
+}
+
+function showSheet(s){
+  currentSheetStop=s;
+  const name = currentLang==='es'&&stopNameKey[s.id] ? t(stopNameKey[s.id]) : s.name;
+  const desc = currentLang==='es'&&stopDescES[s.id] ? stopDescES[s.id] : s.desc;
+  document.getElementById('sh-name').textContent=name;
+  const ce=document.getElementById('sh-cat');ce.textContent=s.cat;ce.className='stop-cat cat-'+s.cat;
+  document.getElementById('sh-desc').textContent=desc||'Visit the link below to learn more.';
+  updateVisitedBtn(s);
+  // Analytics
+  if(typeof gtag!=='undefined') gtag('event','view_stop',{stop_name:s.name,stop_category:s.cat});
+  // Hours
+  const hoursEl=document.getElementById('sh-hours');
+  if(s.hours){hoursEl.innerHTML=`<span style="font-size:13px;color:#666">🕐 ${s.hours}</span>`;hoursEl.style.display='block';}
+  else{hoursEl.style.display='none';}
+  const le=document.getElementById('sh-links');le.innerHTML='';
+  if(s.cat==='Transit'){
+    const gmDir=`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=transit`;
+    le.innerHTML+=`<a class="stop-link transit-dir" href="${gmDir}" target="_blank">${t('get_directions_here')}</a>`;
+    if(s.metraUrl) le.innerHTML+=`<a class="stop-link" href="${s.metraUrl}" target="_blank">${t('metra_schedule')}</a>`;
+    if(s.link&&s.link.includes('divvy')) le.innerHTML+=`<a class="stop-link" href="${s.link}" target="_blank">divvybikes.com ↗</a>`;
+    if(s.link2) le.innerHTML+=`<a class="stop-link" href="${s.link2}" target="_blank">🚲 ${currentLang==='es'?'Mapa en vivo ↗':'Live bike map ↗'}</a>`;
+    if(!s.link||!s.link.includes('divvy')) le.innerHTML+=`<a class="stop-link" href="https://www.transitchicago.com/planatrip/" target="_blank">${t('cta_planner')}</a>`;
+  } else {
+    if(s.link) le.innerHTML+=`<a class="stop-link" href="${s.link}" target="_blank">${t('learn_more')}</a>`;
+    if(s.addr) le.innerHTML+=`<a class="stop-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.addr)}" target="_blank">${t('open_in_maps')}</a>`;
+    if(s.directions) le.innerHTML+=`<a class="stop-link" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}&travelmode=walking" target="_blank">📍 ${currentLang==='es'?'Cómo llegar':'Get directions'}</a>`;
+  }
+  document.getElementById('sheet').classList.add('open');
+}
+
+function renderList(){
+  const visible=getVisible();
+  document.getElementById('count-shown').textContent=visible.length;
+  document.getElementById('count-all').textContent=stops.length;
+  const cards=document.getElementById('stop-cards');cards.innerHTML='';
+  visible.forEach(s=>{
+    const name = currentLang==='es'&&stopNameKey[s.id] ? t(stopNameKey[s.id]) : s.name;
+    const desc = currentLang==='es'&&stopDescES[s.id] ? stopDescES[s.id] : s.desc;
+    const ini=name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const mins=s.lat&&s.lng?walkMins(s.lat,s.lng):null;
+    const walkStr=mins?`<span class="walk-time">🚶 ${mins} min away</span>`:'';
+    const isVisited=visitedIds.has(s.id);
+    let lnks='';
+    if(s.link)lnks+=`<a class="card-link" href="${s.link}" target="_blank">Website ↗</a>`;
+    if(s.addr)lnks+=`<a class="card-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.addr)}" target="_blank">Maps ↗</a>`;
+    const div=document.createElement('div');
+    div.className='stop-card'+(isVisited?' visited':'');
+    div.innerHTML=`<div class="stop-dot dot-${s.cat}">${ini}</div><div class="stop-info"><div class="stop-name">${name}</div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:2px"><span class="stop-cat cat-${s.cat}">${s.cat}</span>${walkStr}</div>${s.addr?`<div class="stop-addr">${s.addr}</div>`:''}<div class="stop-preview">${desc}</div><span class="card-expand">${t('show_more')}</span>${lnks?`<div class="card-links">${lnks}</div>`:''}</div><div class="chevron">›</div>`;
+    // Expand toggle — tapping "Show more" expands inline, tapping card opens sheet
+    const expandBtn = div.querySelector('.card-expand');
+    const preview = div.querySelector('.stop-preview');
+    expandBtn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const expanded = preview.classList.toggle('expanded');
+      expandBtn.textContent = expanded ? t('show_less') : t('show_more');
+    });
+    div.addEventListener('click', ()=>showSheet(s));
+    cards.appendChild(div);
+  });
+}
+
+// ── Language / i18n ───────────────────────────────────────
+let currentLang = 'en';
+try{ currentLang = localStorage.getItem('pct-lang')||'en'; }catch(e){}
+
+const translations = {
+  en: {
+    // UI
+    all_stops:'All stops', landmarks:'Landmarks', museums:'Museums', transit:'Transit',
+    nav_map:'Map', nav_stops:'Stops', nav_directions:'Directions', nav_plan:'Plan Trip',
+    build_route:'Build your route',
+    route_hint:'Tap stops below to add them to your route. Tap ✕ to remove. Use ↑↓ to reorder.',
+    partnership:'A partnership with',
+    plan_time_title:'⏱ Time at each stop',
+    plan_time_intro:"A full visit to all highlights takes about 4–5 hours. Here's how long to budget per stop.",
+    plan_lunch_title:'🍽 Lunch spots nearby',
+    plan_lunch_intro:'All within a short drive of the trail core.',
+    plan_visit_title:'🏪 Also worth a visit',
+    plan_visit_intro:'Other businesses and spots near the trail worth checking out.',
+    plan_tips_title:'💡 Visitor tips',
+    mark_visited:'Mark visited', visited:'✓ Visited', share:'Share ↗',
+    show_more:'Show more ›', show_less:'Show less ‹',
+    add_stops:'Add stops', search_placeholder:'Search stops…',
+    open_maps:'Open in Google Maps ↗', clear_route:'Clear route',
+    locate_me:"📍 I'm here", locating:'📍 Locating…',
+    get_directions_here:'🚆 Get directions here',
+    metra_schedule:'View Metra schedule', cta_planner:'CTA trip planner',
+    learn_more:'Learn more ↗', open_in_maps:'Open in Maps ↗',
+    // Stop names
+    sn_103rd_metra:'103rd St / Rosemoor Metra',
+    sn_107th_metra:'107th St Metra',
+    sn_111th_metra:'111th St / Pullman Metra',
+    sn_115th_metra:'115th St / Kensington Metra',
+    sn_greenstone:'Greenstone Church',
+    sn_firehouse:'Firehouse',
+    sn_hotel_florence:'Hotel Florence',
+    sn_market_square:'Market Square',
+    sn_car_works:'Pullman Car Works',
+    sn_visitor_center:'Visitor Center',
+    sn_randolph:'A. Philip Randolph Museum',
+    sn_wheel_works:'Pullman Wheel Works',
+    sn_exhibit_hall:'Pullman Exhibit Hall',
+    sn_artspace:'Pullman Artspace',
+    sn_honeymoon:'Honeymoon Row',
+    sn_stables:'Horse Stables',
+    sn_miller:'Florence Lowden Miller Center',
+    sn_schlitz:'Schlitz Row',
+    sn_house_project:'Pullman House Project',
+    sn_divvy_111th:'Divvy Station — Cottage Grove & 111th Pl',
+    sn_divvy_mlk:'Divvy Station — MLK Dr & 111th St',
+  },
+  es: {
+    // UI
+    all_stops:'Todas las paradas', landmarks:'Monumentos', museums:'Museos', transit:'Tránsito',
+    nav_map:'Mapa', nav_stops:'Paradas', nav_directions:'Cómo llegar', nav_plan:'Planificar',
+    build_route:'Planifica tu ruta',
+    route_hint:'Toca las paradas para agregarlas a tu ruta. Toca ✕ para eliminar. Usa ↑↓ para reordenar.',
+    partnership:'Una asociación con',
+    plan_time_title:'⏱ Tiempo en cada parada',
+    plan_time_intro:'Una visita completa a los puntos principales toma entre 4 y 5 horas. Aquí te decimos cuánto tiempo dedicar a cada parada.',
+    plan_lunch_title:'🍽 Lugares para almorzar cerca',
+    plan_lunch_intro:'Todos a poca distancia del centro del sendero.',
+    plan_visit_title:'🏪 También vale la pena visitar',
+    plan_visit_intro:'Otros negocios y lugares cerca del sendero que vale la pena conocer.',
+    plan_tips_title:'💡 Consejos para visitantes',
+    mark_visited:'Marcar como visitado', visited:'✓ Visitado', share:'Compartir ↗',
+    show_more:'Ver más ›', show_less:'Ver menos ‹',
+    add_stops:'Agregar paradas', search_placeholder:'Buscar paradas…',
+    open_maps:'Abrir en Google Maps ↗', clear_route:'Limpiar ruta',
+    locate_me:'📍 Estoy aquí', locating:'📍 Localizando…',
+    get_directions_here:'🚆 Cómo llegar aquí',
+    metra_schedule:'Ver horario Metra', cta_planner:'Planificador de viaje CTA',
+    learn_more:'Más información ↗', open_in_maps:'Abrir en Maps ↗',
+    // Stop names
+    sn_103rd_metra:'Metra 103rd St / Rosemoor',
+    sn_107th_metra:'Metra 107th St',
+    sn_111th_metra:'Metra 111th St / Pullman',
+    sn_115th_metra:'Metra 115th St / Kensington',
+    sn_greenstone:'Iglesia Greenstone',
+    sn_firehouse:'Estación de Bomberos',
+    sn_hotel_florence:'Hotel Florence',
+    sn_market_square:'Plaza del Mercado',
+    sn_car_works:'Fábrica de Vagones Pullman',
+    sn_visitor_center:'Centro de Visitantes',
+    sn_randolph:'Museo A. Philip Randolph',
+    sn_wheel_works:'Talleres de Ruedas Pullman',
+    sn_exhibit_hall:'Salón de Exposiciones Pullman',
+    sn_artspace:'Pullman Artspace',
+    sn_honeymoon:'Honeymoon Row',
+    sn_stables:'Establos Históricos',
+    sn_miller:'Centro Florence Lowden Miller',
+    sn_schlitz:'Schlitz Row',
+    sn_house_project:'Proyecto Casa Pullman',
+    sn_divvy_111th:'Estación Divvy — Cottage Grove y 111th Pl',
+    sn_divvy_mlk:'Estación Divvy — MLK Dr y 111th St',
+  }
+};
+
+// Spanish stop descriptions
+const stopDescES = {
+  '103rd-metra': 'Estación de la Línea Eléctrica Metra en el extremo norte del distrito Pullman. Una conveniente puerta de entrada al sendero desde el centro de Chicago.',
+  '107th-metra': 'Parada de la Línea Eléctrica Metra con acceso fácil al Museo A. Philip Randolph y los Talleres de Ruedas Pullman.',
+  '111th-metra': 'El principal centro de transporte para visitantes de Pullman Histórico, a pasos del Centro de Visitantes, el Hotel Florence y el núcleo del Parque Histórico Nacional Pullman.',
+  '115th-metra': 'Estación terminal sur del sendero, sirviendo al vecindario Kensington en el límite del distrito Pullman.',
+  'greenstone-church': 'Construida en 1882, esta iglesia de estilo gótico inglés fue levantada por George Pullman como parte de su ciudad modelo. Su distintivo exterior de piedra serpentina verde es una de las estructuras más reconocibles de Pullman.',
+  'firehouse': 'La histórica estación de bomberos de Pullman sirvió las necesidades de seguridad pública de la comunidad planificada a finales del siglo XIX. Su diseño románico refleja la cohesión arquitectónica que Pullman exigía en toda su ciudad.',
+  'hotel-florence': 'Nombrado en honor a la hija favorita de George Pullman, este hotel de estilo reina Ana (1881) fue el centro social de la ciudad modelo. Ahora sitio histórico del estado de Illinois, alojó dignatarios y fue símbolo de las ambiciones de Pullman.',
+  'market-square': 'Una de las primeras plazas comerciales planificadas en los Estados Unidos, diseñada para satisfacer las necesidades diarias de los trabajadores de Pullman. El bloque de estilo arcade es un ejemplo notable de planificación urbana del siglo XIX.',
+  'pullman-car-works': 'El corazón industrial de la compañía Pullman, donde miles de trabajadores construyeron y mantuvieron los icónicos vagones dormitorio que definieron los viajes en tren en América. Ahora forma parte del Parque Histórico Nacional Pullman.',
+  'visitor-center': 'El centro de visitantes oficial del Servicio de Parques Nacionales para el Parque Histórico Nacional Pullman. Comience su visita aquí con exhibiciones, programas de guardabosques y orientación sobre la historia del parque.',
+  'randolph-museum': 'Dedicado a la vida y legado de A. Philip Randolph, fundador de la Hermandad de Porteadores de Coches Cama — el primer sindicato laboral predominantemente negro. El museo honra el papel crucial de los porteadores en el movimiento de derechos civiles.',
+  'wheel-works': 'Un antiguo complejo industrial donde se fabricaban ruedas de tren. Reutilizado de manera adaptativa como vivienda asequible por Mercy Housing Lakefront, preservando el carácter histórico del edificio.',
+  'exhibit-hall': 'Un museo y espacio comunitario operado por la Fundación Histórica Pullman, con exhibiciones, eventos y programas educativos sobre la rica historia del vecindario.',
+  'artspace': 'Un vibrante espacio de trabajo y vivienda para artistas, alojado en un edificio histórico de Pullman. Pullman Artspace apoya a la comunidad creativa mientras preserva el patrimonio arquitectónico del vecindario.',
+  'honeymoon-row': 'Un encantador bloque de casas adosadas conocido por las jóvenes parejas que se establecieron allí. El paisaje urbano ofrece una vista a la vida cotidiana en la comunidad residencial planificada de Pullman.',
+  'horse-stables': 'Construido originalmente para alojar los caballos de las operaciones de Pullman, esta estructura es ahora hogar de Share Your Soles, una organización sin fines de lucro que recolecta y distribuye zapatos a quienes los necesitan.',
+  'miller-center': 'Un centro comunitario nombrado en honor de Florence Lowden Miller, operado por la Fundación Histórica Pullman como centro de programación y esfuerzos de preservación del vecindario.',
+  'schlitz-row': 'Ubicados en 11400 S. Front Ave. y el establo adyacente en 11314 S. Front Ave. (ambos de 1906), estos edificios de estilo reina Ana combinan arcos salientes y acentos de estuco para un efecto escultural.',
+  'house-project': 'Un museo inmersivo que preserva una auténtica casa restaurada de un trabajador de Pullman. Los visitantes experimentan la vida doméstica tal como se vivía en la ciudad modelo de la década de 1890. También es hogar de Pullman Club Coffee, que sirve café y pasteles.',
+  'divvy-cottage-111th-pl': 'Estación de bicicletas compartidas Divvy en Cottage Grove y 111th Place. Desbloquee bicicletas clásicas y eléctricas con la aplicación Divvy o Lyft. Consulte disponibilidad en divvybikes.com.',
+  'divvy-mlk-111th': 'Estación de bicicletas Divvy en Martin Luther King Dr y 111th St. Desbloquee bicicletas clásicas y eléctricas con la aplicación Divvy o Lyft. Consulte disponibilidad en divvybikes.com.',
+};
+
+// Stop name key map
+const stopNameKey = {
+  '103rd-metra':'sn_103rd_metra','107th-metra':'sn_107th_metra','111th-metra':'sn_111th_metra',
+  '115th-metra':'sn_115th_metra','greenstone-church':'sn_greenstone','firehouse':'sn_firehouse',
+  'hotel-florence':'sn_hotel_florence','market-square':'sn_market_square',
+  'pullman-car-works':'sn_car_works','visitor-center':'sn_visitor_center',
+  'randolph-museum':'sn_randolph','wheel-works':'sn_wheel_works','exhibit-hall':'sn_exhibit_hall',
+  'artspace':'sn_artspace','honeymoon-row':'sn_honeymoon','horse-stables':'sn_stables',
+  'miller-center':'sn_miller','schlitz-row':'sn_schlitz','house-project':'sn_house_project',
+  'divvy-cottage-111th-pl':'sn_divvy_111th','divvy-mlk-111th':'sn_divvy_mlk',
+};
+
+function t(key){ return (translations[currentLang]||translations.en)[key]||translations.en[key]||key; }
+
+function applyLang(){
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.dataset.i18n;
+    el.textContent=t(key);
+  });
+  // Update search placeholder
+  const sp=document.getElementById('stop-search');
+  if(sp) sp.placeholder=t('search_placeholder');
+  // Update directions UI elements
+  const mapsLink=document.getElementById('maps-link');
+  if(mapsLink) mapsLink.textContent=t('open_maps');
+  const clearBtn=document.getElementById('clear-route');
+  if(clearBtn) clearBtn.textContent=t('clear_route');
+  // Update locate button
+  const locBtn=document.getElementById('locate-btn');
+  if(locBtn&&!locBtn.classList.contains('locating')) locBtn.textContent=t('locate_me');
+  // Update progress badge text
+  updateProgressBadge();
+  // Re-render list and route picker with new language
+  renderList();
+  renderPicker();
+  // Update sheet buttons if open
+  if(currentSheetStop) updateVisitedBtn(currentSheetStop);
+  // Update plan view section titles (already done via data-i18n, re-render time cards)
+  document.getElementById('time-cards').innerHTML='';
+  renderPlanView();
+}
+
+function toggleLang(){
+  currentLang = currentLang==='en'?'es':'en';
+  try{localStorage.setItem('pct-lang',currentLang);}catch(e){}
+  document.getElementById('lang-toggle').textContent = currentLang==='en'?'ES':'EN';
+  if(typeof gtag!=='undefined') gtag('event','language_switch',{language:currentLang});
+  applyLang();
+}
+
+// ── Font size cycle ────────────────────────────────────────
+const fontSizes = ['normal','large','xlarge'];
+const fontLabels = ['A+','A++','A'];
+let fontIdx = 0;
+function cycleFont(){
+  fontSizes.forEach(f=>document.body.classList.remove('font-'+f));
+  fontIdx = (fontIdx+1) % fontSizes.length;
+  document.body.classList.add('font-'+fontSizes[fontIdx]);
+  document.getElementById('font-toggle').textContent = fontLabels[fontIdx];
+  try{localStorage.setItem('pct-font',fontIdx);}catch(e){}
+}
+// Restore font preference
+try{
+  const saved=parseInt(localStorage.getItem('pct-font')||'0');
+  if(saved>0){
+    fontIdx=saved-1;
+    cycleFont();
+  }
+}catch(e){}
+
+// ── Plan Your Trip ────────────────────────────────────────
+const stopTimes = [
+  {id:'visitor-center',    dur:'45–60 min', tip:'Start here. Rangers can orient you and suggest a walking order. Free entry.'},
+  {id:'pullman-car-works', dur:'15–20 min', tip:'Exterior viewing and interpretive signage. The factory scale is impressive from outside.'},
+  {id:'exhibit-hall',      dur:'30–45 min', tip:'Free admission. Great exhibits on labor history and neighborhood life. Allow time to browse.'},
+  {id:'house-project',     dur:'60–90 min', tip:'Book in advance — daily tours at 10am. Includes the Dunbar House and a neighborhood walking tour.'},
+  {id:'hotel-florence',    dur:'15–20 min', tip:'Exterior and grounds. Check IDNR\'s website for interior tour availability.'},
+  {id:'greenstone-church', dur:'10–15 min', tip:'Admire the distinctive green stone exterior. Occasional interior access — check ahead.'},
+  {id:'market-square',     dur:'10–15 min', tip:'A quick but worthwhile stop. Great photo opportunity and a sense of the town\'s original scale.'},
+  {id:'randolph-museum',   dur:'30–45 min', tip:'Currently closed for expansion — check thepullmanportersmuseum.org for reopening updates.'},
+  {id:'artspace',          dur:'10–15 min', tip:'Check pullmanarts.org for open studio events. Worth seeing even if closed.'},
+  {id:'wheel-works',       dur:'5–10 min',  tip:'Exterior only — a great example of adaptive reuse, now affordable housing.'},
+  {id:'honeymoon-row',     dur:'10 min',    tip:'A short walk for a charming streetscape. Best as part of a self-guided stroll.'},
+  {id:'horse-stables',     dur:'5–10 min',  tip:'Home to Share Your Soles nonprofit. A living example of adaptive reuse in the neighborhood.'},
+];
+
+function renderPlanView(){
+  const cards = document.getElementById('time-cards');
+  if(cards.children.length > 0) return;
+  stopTimes.forEach(t => {
+    const s = stops.find(s=>s.id===t.id);
+    if(!s) return;
+    const ini = s.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const colors = {Landmark:'#1D4E2B', Museum:'#BA7517', Transit:'#185FA5'};
+    const col = colors[s.cat]||'#1D4E2B';
+    const div = document.createElement('div');
+    div.className = 'time-card';
+    div.innerHTML = `
+      <div class="time-dot" style="background:${col}">${ini}</div>
+      <div class="time-info">
+        <div class="time-name">${s.name}</div>
+        <div class="time-dur">⏱ ${t.dur}</div>
+        <div class="time-tip">${t.tip}</div>
+      </div>`;
+    div.addEventListener('click', ()=>{ showSheet(s); });
+    cards.appendChild(div);
+  });
+}
+
+// ── State ─────────────────────────────────────────────────
+let userLat=null, userLng=null, userMarker=null;
+let visitedIds=new Set(JSON.parse(localStorage.getItem('pct-visited')||'[]'));
+let currentSheetStop=null;
+
+function saveVisited(){
+  try{localStorage.setItem('pct-visited',JSON.stringify([...visitedIds]));}catch(e){}
+}
+
+function updateProgressBadge(){
+  const badge=document.getElementById('progress-badge');
+  if(visitedIds.size>0){
+    badge.style.display='block';
+    badge.textContent=`${visitedIds.size} / ${stops.length} visited`;
+  } else {
+    badge.style.display='none';
+  }
+}
+
+// ── GPS / Locate Me ───────────────────────────────────────
+function locateMe(){
+  const btn=document.getElementById('locate-btn');
+  if(!navigator.geolocation){alert('Location not supported on this device.');return;}
+  btn.textContent='📍 Locating…';btn.classList.add('locating');
+  navigator.geolocation.getCurrentPosition(pos=>{
+    userLat=pos.coords.latitude;userLng=pos.coords.longitude;
+    btn.textContent='📍 I\'m here';btn.classList.remove('locating');
+    if(userMarker) userMarker.remove();
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#185FA5" opacity="0.25"/><circle cx="10" cy="10" r="5" fill="#185FA5"/><circle cx="10" cy="10" r="2.5" fill="white"/></svg>`;
+    userMarker=L.marker([userLat,userLng],{
+      icon:L.divIcon({html:svg,className:'',iconSize:[20,20],iconAnchor:[10,10]}),
+      zIndexOffset:1000
+    }).addTo(map);
+    map.setView([userLat,userLng],15);
+    renderList(); // refresh walk times
+  },err=>{
+    btn.textContent='📍 I\'m here';btn.classList.remove('locating');
+    alert('Could not get your location. Please check your location permissions.');
+  },{enableHighAccuracy:true,timeout:10000});
+}
+
+function walkMins(toLat,toLng){
+  if(userLat===null) return null;
+  const d=haversine({lat:userLat,lng:userLng},{lat:toLat,lng:toLng});
+  return Math.max(1,Math.round(d/0.05));
+}
+
+// ── Visited tracking ──────────────────────────────────────
+function toggleVisited(){
+  if(!currentSheetStop) return;
+  const id=currentSheetStop.id;
+  if(visitedIds.has(id)){visitedIds.delete(id);}
+  else{
+    visitedIds.add(id);
+    if(typeof gtag!=='undefined') gtag('event','mark_visited',{stop_name:currentSheetStop.name});
+  }
+  saveVisited();
+  updateProgressBadge();
+  updateVisitedBtn(currentSheetStop);
+  renderList();
+}
+
+function updateVisitedBtn(s){
+  const btn=document.getElementById('sh-visited-btn');
+  if(!btn) return;
+  if(visitedIds.has(s.id)){
+    btn.textContent=t('visited');btn.classList.add('visited-badge');
+  } else {
+    btn.textContent=t('mark_visited');btn.classList.remove('visited-badge');
+  }
+  document.getElementById('sh-share-btn').textContent=t('share');
+}
+
+// ── Share ─────────────────────────────────────────────────
+function shareStop(){
+  if(!currentSheetStop) return;
+  const s=currentSheetStop;
+  if(typeof gtag!=='undefined') gtag('event','share_stop',{stop_name:s.name});
+  const url=`https://mcmahonag.github.io/pullman-cultural-trail/#${s.id}`;
+  const text=`${s.name} — Pullman Cultural Trail, Chicago`;
+  if(navigator.share){
+    navigator.share({title:text,text:s.desc,url:url}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(url).then(()=>{
+      const btn=document.getElementById('sh-share-btn');
+      btn.textContent='Copied!';
+      setTimeout(()=>{btn.textContent='Share ↗';},2000);
+    }).catch(()=>alert('Link: '+url));
+  }
+}
+let customRoute = [];
+
+function initRouteBuilder(){
+  renderPicker();
+  renderBuiltRoute();
+  document.getElementById('stop-search').addEventListener('input', renderPicker);
+}
+
+function renderPicker(){
+  const query = (document.getElementById('stop-search').value||'').toLowerCase();
+  const picker = document.getElementById('stop-picker');
+  picker.innerHTML = '';
+  stops.filter(s=>s.lat&&s.lng).forEach(s=>{
+    const name = currentLang==='es'&&stopNameKey[s.id] ? t(stopNameKey[s.id]) : s.name;
+    if(query && !name.toLowerCase().includes(query) && !s.cat.toLowerCase().includes(query)) return;
+    const inRoute = customRoute.some(r=>r.id===s.id);
+    const ini = name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const div = document.createElement('div');
+    div.className = 'picker-stop' + (inRoute?' in-route':'');
+    div.innerHTML = `
+      <div class="picker-dot dot-${s.cat}">${ini}</div>
+      <div class="picker-info">
+        <div class="picker-name">${name}</div>
+        <div class="picker-cat">${s.cat}${s.addr?' · '+s.addr:''}</div>
+      </div>
+      <div class="add-icon">${inRoute?'✓':'+'}</div>`;
+    if(!inRoute) div.addEventListener('click',()=>addToRoute(s));
+    picker.appendChild(div);
+  });
+}
+
+function addToRoute(s){
+  if(customRoute.some(r=>r.id===s.id)) return;
+  customRoute.push(s);
+  renderBuiltRoute();
+  renderPicker();
+}
+
+function removeFromRoute(id){
+  customRoute = customRoute.filter(s=>s.id!==id);
+  renderBuiltRoute();
+  renderPicker();
+}
+
+function moveStop(idx, dir){
+  const newIdx = idx+dir;
+  if(newIdx<0||newIdx>=customRoute.length) return;
+  const tmp = customRoute[idx];
+  customRoute[idx] = customRoute[newIdx];
+  customRoute[newIdx] = tmp;
+  renderBuiltRoute();
+}
+
+function renderBuiltRoute(){
+  const container = document.getElementById('built-route');
+  const summary = document.getElementById('route-summary');
+  const actions = document.getElementById('route-actions');
+  container.innerHTML = '';
+
+  if(customRoute.length===0){
+    summary.style.display='none';
+    actions.style.display='none';
+    return;
+  }
+
+  // Calc total distance
+  let total=0;
+  for(let i=0;i<customRoute.length-1;i++) total+=haversine(customRoute[i],customRoute[i+1]);
+  const mins=Math.round(total/0.05),hrs=Math.floor(mins/60),rm=mins%60;
+
+  summary.style.display='flex';
+  document.getElementById('rs-dist').textContent=total.toFixed(1)+' mi';
+  document.getElementById('rs-time').textContent=hrs>0?`${hrs}h ${rm}m`:`${mins} min`;
+  document.getElementById('rs-stops').textContent=customRoute.length;
+
+  customRoute.forEach((s,i)=>{
+    const dist=i<customRoute.length-1?haversine(s,customRoute[i+1]):null;
+    const dir=i<customRoute.length-1?bearing(s,customRoute[i+1]):'';
+    const div=document.createElement('div');
+    div.className='built-stop';
+    div.innerHTML=`
+      <div class="built-num">${i+1}</div>
+      <div class="built-info">
+        <div class="built-name">${s.name}</div>
+        <div class="built-meta">${s.cat}${dist?` · then head ${dir} ${dist.toFixed(2)} mi`:' · final stop'}</div>
+      </div>
+      <div class="built-actions">
+        <button class="built-btn" onclick="moveStop(${i},-1)" ${i===0?'style="opacity:.3;pointer-events:none"':''}>↑</button>
+        <button class="built-btn" onclick="moveStop(${i},1)" ${i===customRoute.length-1?'style="opacity:.3;pointer-events:none"':''}>↓</button>
+        <button class="built-btn remove" onclick="removeFromRoute('${s.id}')">✕</button>
+      </div>`;
+    container.appendChild(div);
+  });
+
+  // Google Maps link
+  const gmStops=customRoute.length<=10?customRoute:[customRoute[0],...customRoute.slice(1,-1).filter((_,i,a)=>i%Math.ceil(a.length/8)===0).slice(0,8),customRoute[customRoute.length-1]];
+  document.getElementById('maps-link').href=`https://www.google.com/maps/dir/${gmStops.map(s=>`${s.lat},${s.lng}`).join('/')}`;
+  actions.style.display='block';
+}
+
+function populateDirectionSelects(){ initRouteBuilder(); }
+
+// Nav
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const v=btn.dataset.view;
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+    const viewId=v==='map'?'map-view':v==='list'?'list-view':v==='directions'?'dir-view':'plan-view';
+    document.getElementById(viewId).classList.add('active');
+    if(typeof gtag!=='undefined') gtag('event','tab_switch',{tab:v});
+    if(v==='map'&&map)setTimeout(()=>map.invalidateSize(),150);
+    if(v==='list')renderList();
+    if(v==='directions')populateDirectionSelects();
+    if(v==='plan')renderPlanView();
+    closeSheet();
+  });
+});
+
+// Filter chips — multi-select
+document.querySelectorAll('.chip').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const cat=btn.dataset.cat;
+    if(cat==='All'){
+      // If all are already active, deselect all; otherwise select all
+      const allCats=['Landmark','Museum','Transit'];
+      if(allCats.every(c=>activeFilters.has(c))){
+        activeFilters.clear();
+        document.querySelectorAll('.chip[data-cat!="All"]').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+      } else {
+        allCats.forEach(c=>activeFilters.add(c));
+        document.querySelectorAll('.chip').forEach(b=>b.classList.add('active'));
+      }
+    } else {
+      // Toggle this category
+      if(activeFilters.has(cat)){
+        activeFilters.delete(cat);
+        btn.classList.remove('active');
+      } else {
+        activeFilters.add(cat);
+        btn.classList.add('active');
+      }
+      // Update "All" chip state
+      const allBtn=document.querySelector('.chip[data-cat="All"]');
+      const allCats=['Landmark','Museum','Transit'];
+      if(allCats.every(c=>activeFilters.has(c))){
+        allBtn.classList.add('active');
+      } else {
+        allBtn.classList.remove('active');
+      }
+    }
+    renderMarkers();renderList();closeSheet();
+  });
+});
+
+document.getElementById('sheet-close').addEventListener('click', function(e){
+  e.stopPropagation();
+  closeSheet();
+}, true);
+document.addEventListener('click', function(e){
+  const sheet = document.getElementById('sheet');
+  if(sheet && sheet.classList.contains('open') && !sheet.contains(e.target)){
+    closeSheet();
+  }
+}, true);
+document.addEventListener('click',function(e){
+  if(e.target && e.target.id==='clear-route'){
+    customRoute=[];
+    renderBuiltRoute();
+    renderPicker();
+  }
+});
+
+function startApp(){
+  if(typeof L === 'undefined'){setTimeout(startApp, 50); return;}
+  initMap(); renderList(); initRouteBuilder(); updateProgressBadge();
+  // Apply saved language
+  if(currentLang==='es'){
+    document.getElementById('lang-toggle').textContent='EN';
+    applyLang();
+  }
+  // Deep link — open stop from URL hash e.g. #visitor-center
+  const hash=window.location.hash.replace('#','');
+  if(hash){
+    const s=stops.find(s=>s.id===hash);
+    if(s){
+      setTimeout(()=>{
+        if(s.lat&&s.lng) map.setView([s.lat,s.lng],17);
+        showSheet(s);
+      },600);
+    }
+  }
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}
+window.addEventListener('resize',()=>{if(map)setTimeout(()=>map.invalidateSize(),100);});
+</script>
+</body>
+</html>
